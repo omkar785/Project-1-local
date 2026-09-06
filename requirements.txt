@@ -1,0 +1,13 @@
+# Core pipeline deps. Install torch + torch_geometric SEPARATELY to match your CUDA
+# (see SERVER.md) — do NOT rely on the versions a plain `pip install torch` picks,
+# because they must match the server's CUDA/driver.
+#
+#   torch
+#   torch_geometric
+#
+# Everything below is CUDA-independent:
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+pyyaml>=6.0
+tqdm>=4.65

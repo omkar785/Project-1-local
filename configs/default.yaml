@@ -1,0 +1,76 @@
+# SentinelGraph — default configuration
+# Every run reads a config like this. Override on the CLI with --set key=value.
+# Person 2 (GNN/Detection) owns model/train/eval; Person 1 owns data/graph.
+
+experiment:
+  name: gin_baseline          # used to name result files + checkpoints
+  seed: 42
+  device: auto                # auto | cpu | cuda | cuda:0 ...
+  results_dir: results
+  checkpoints_dir: results/checkpoints
+
+data:
+  # --- source ---
+  # On the GPU server, point this at the real AMLworld HI-Small CSV.
+  # Locally we use the synthetic generator (see scripts/make_synthetic.py),
+  # which writes a file with the SAME schema so the pipeline is identical.
+  source: synthetic           # synthetic | csv
+  csv_path: data/HI-Small_Trans.csv
+  patterns_path: data/HI-Small_Patterns.txt   # optional, used later for explainability
+  synthetic:
+    n_accounts: 2000
+    n_transactions: 40000
+    illicit_ratio: 0.02
+    n_currencies: 3
+    n_payment_formats: 4
+
+  # --- column mapping (AMLworld HI-Small defaults) ---
+  # Confirm these against `head -3` of the real CSV on the server and adjust if needed.
+  columns:
+    timestamp: "Timestamp"
+    from_bank: "From Bank"
+    from_account: "Account"
+    to_bank: "To Bank"
+    to_account: "Account.1"
+    amount_received: "Amount Received"
+    receiving_currency: "Receiving Currency"
+    amount_paid: "Amount Paid"
+    payment_currency: "Payment Currency"
+    payment_format: "Payment Format"
+    label: "Is Laundering"
+
+  # --- temporal split (by transaction timestamp) ---
+  split:
+    method: temporal          # temporal | random
+    train_frac: 0.6
+    val_frac: 0.2
+    test_frac: 0.2
+
+graph:
+  # nodes = accounts (bank+account id), edges = transactions (directed multigraph)
+  node_features: degree       # degree | ones  (structural, label-free)
+  add_reverse_edges: false    # Multi-GIN turns this on (Week 2)
+  add_ports: false            # Multi-GIN (Week 2)
+  add_ego_ids: false          # Multi-GIN (Week 2)
+
+model:
+  arch: gin                   # gin | multi_gin (multi_gin arrives Week 2)
+  hidden_dim: 64
+  num_layers: 3
+  dropout: 0.1
+  edge_readout: concat        # combine src||dst||edge_attr -> MLP -> logit
+
+train:
+  epochs: 30
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_full_graph: true      # full-graph training (fine for HI-Small); sampling added later
+  class_weight: auto          # auto = inverse-frequency weighting for the minority (laundering) class
+  early_stop_patience: 8
+  monitor: val_pr_auc         # metric used for early stopping / best checkpoint
+
+eval:
+  # imbalanced data -> accuracy is NOT the headline metric
+  primary: [minority_f1, pr_auc]
+  secondary: [precision, recall, roc_auc]
+  decision_threshold: 0.5
