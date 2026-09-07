@@ -37,7 +37,7 @@ def build_graph(data: TransactionData, cfg: dict) -> Data:
 
     edge_attr = torch.tensor(edge_feats, dtype=torch.float)
 
-    x = _node_features(data, gcfg["node_features"])
+    x = _node_features(data, gcfg)
     x = torch.tensor(_standardize(x.numpy(), fit_mask=None), dtype=torch.float)
 
     g = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
@@ -68,13 +68,27 @@ def _standardize(feats: np.ndarray, fit_mask: np.ndarray | None) -> np.ndarray:
     return (feats - mean) / std
 
 
-def _node_features(data: TransactionData, kind: str) -> torch.Tensor:
+def _degree_features(data: TransactionData) -> np.ndarray:
+    n = data.n_nodes
+    out_deg = np.bincount(data.src, minlength=n).astype(np.float32)
+    in_deg = np.bincount(data.dst, minlength=n).astype(np.float32)
+    return np.stack([np.log1p(in_deg), np.log1p(out_deg)], axis=1)
+
+
+def _node_features(data: TransactionData, gcfg: dict) -> torch.Tensor:
+    kind = gcfg["node_features"]
     n = data.n_nodes
     if kind == "ones":
         return torch.ones((n, 1), dtype=torch.float)
     if kind == "degree":
-        out_deg = np.bincount(data.src, minlength=n).astype(np.float32)
-        in_deg = np.bincount(data.dst, minlength=n).astype(np.float32)
-        feats = np.stack([np.log1p(in_deg), np.log1p(out_deg)], axis=1)
-        return torch.tensor(feats, dtype=torch.float)
+        return torch.tensor(_degree_features(data), dtype=torch.float)
+    if kind == "embedding":
+        # Stage-1 -> Stage-2 seam: initialize nodes with pretrained account embeddings.
+        from src.graph.embeddings import load_node_embeddings
+
+        ecfg = gcfg.get("embedding", {})
+        emb = load_node_embeddings(ecfg["path"], data.account_ids)
+        if ecfg.get("mode", "replace") == "concat":
+            emb = np.concatenate([_degree_features(data), emb], axis=1)
+        return torch.tensor(emb, dtype=torch.float)
     raise ValueError(f"Unknown node_features: {kind}")

@@ -66,8 +66,8 @@ Running on the real data + GPU: see **[SERVER.md](SERVER.md)**.
 | Week-2 ablation ladder (`scripts/run_ablation.sh`) | ✅ one-command GIN→full Multi-GIN table |
 | Label-efficiency scaffolding (`--label-pct`) | ✅ works in both train modes |
 | Experiment logging (seed/label%/arch/metrics/time) | ✅ |
+| Stage 1 → Stage 2 **injection seam** (`node_features=embedding`) | ✅ interface + tested; awaits Stage 1 |
 | **Stage 1 SSL** (LaundroGraph-style) | ⏳ Person 3 (Week 1–2) |
-| Stage 1 → Stage 2 integration | ⏳ Week 3 |
 | Ablations + explainability prototype | ⏳ Week 4 |
 
 Deferred (per plan §8): AMLworld Medium/Large, Elliptic, dashboard, federated/DP/drift, SAR.
