@@ -4,8 +4,9 @@ nodes  = accounts
 edges  = transactions (parallel edges between the same pair are kept -> multigraph)
 target = per-edge Is Laundering  (edge classification)
 
-Multi-GIN extras (reverse edges, ports, ego ids) are stubbed here and switched on in
-Week 2 via the graph.* config flags. For the Week-1 baseline they stay off.
+Multi-GIN extras: port numbering is applied here (edge-level, so it's a data/graph-side
+op); reverse message passing lives in the model (model.use_reverse_mp); ego IDs need
+mini-batch subgraph sampling and are deferred to the LinkNeighborLoader step.
 """
 from __future__ import annotations
 
@@ -25,6 +26,15 @@ def build_graph(data: TransactionData, cfg: dict) -> Data:
     # Standardize edge features using TRAIN-split statistics only (no leakage from val/test).
     is_train = data.split == 0
     edge_feats = _standardize(data.edge_features, fit_mask=is_train)
+
+    if gcfg.get("add_ports"):
+        # Port numbering: append repeated-transfer counters so parallel edges between the
+        # same accounts stay distinguishable (standardized on train stats like the rest).
+        from src.graph.multigraph import port_features
+
+        ports = _standardize(port_features(data.src, data.dst, data.timestamps), fit_mask=is_train)
+        edge_feats = np.concatenate([edge_feats, ports], axis=1)
+
     edge_attr = torch.tensor(edge_feats, dtype=torch.float)
 
     x = _node_features(data, gcfg["node_features"])
@@ -40,10 +50,10 @@ def build_graph(data: TransactionData, cfg: dict) -> Data:
     g.val_mask = split == 1
     g.test_mask = split == 2
 
-    if gcfg.get("add_reverse_edges") or gcfg.get("add_ports") or gcfg.get("add_ego_ids"):
-        # Placeholder: Multi-GIN augmentations land in Week 2 (src/graph/multigraph.py).
+    if gcfg.get("add_ego_ids"):
         raise NotImplementedError(
-            "reverse edges / ports / ego ids are a Week-2 Multi-GIN feature; keep these flags false for the baseline."
+            "ego IDs mark the seed nodes of a sampled subgraph, which needs mini-batch "
+            "LinkNeighborLoader training — deferred to that step. Keep graph.add_ego_ids=false for now."
         )
 
     return g

@@ -61,5 +61,11 @@ def build_model(cfg: dict, node_in: int, edge_in: int) -> nn.Module:
             hidden=m["hidden_dim"], num_layers=m["num_layers"], dropout=m["dropout"],
         )
     if m["arch"] == "multi_gin":
-        raise NotImplementedError("Multi-GIN arrives in Week 2 (src/models/multi_gin.py).")
+        from src.models.multi_gin import MultiGINEdgeClassifier
+
+        return MultiGINEdgeClassifier(
+            node_in=node_in, edge_in=edge_in,
+            hidden=m["hidden_dim"], num_layers=m["num_layers"], dropout=m["dropout"],
+            use_reverse_mp=m.get("use_reverse_mp", True),
+        )
     raise ValueError(f"Unknown model.arch: {m['arch']}")

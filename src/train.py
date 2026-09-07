@@ -140,9 +140,12 @@ def main():
     print(f"\n[best epoch {best_epoch}] threshold={thr:.3f} TEST: {format_metrics(test)}")
     print(f"[time] {train_seconds:.1f}s for {epochs_run} epochs")
 
+    reverse_mp = bool(cfg["model"].get("use_reverse_mp")) if cfg["model"]["arch"] == "multi_gin" else False
     path = log_result(cfg["experiment"]["results_dir"], {
         "experiment": cfg["experiment"]["name"], "arch": cfg["model"]["arch"],
+        "reverse_mp": reverse_mp, "ports": bool(cfg["graph"].get("add_ports")),
         "seed": cfg["experiment"]["seed"], "label_pct": args.label_pct, "split": "test",
+        "threshold": round(thr, 4),
         "train_seconds": round(train_seconds, 1), "epochs_run": epochs_run, "device": device,
         **{k: test.get(k) for k in ("minority_f1", "pr_auc", "precision", "recall", "roc_auc",
                                      "tp", "fp", "fn", "tn", "n_pos", "n")},

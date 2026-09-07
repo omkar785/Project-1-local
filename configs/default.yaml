@@ -49,16 +49,18 @@ data:
 graph:
   # nodes = accounts (bank+account id), edges = transactions (directed multigraph)
   node_features: degree       # degree | ones  (structural, label-free)
-  add_reverse_edges: false    # Multi-GIN turns this on (Week 2)
-  add_ports: false            # Multi-GIN (Week 2)
-  add_ego_ids: false          # Multi-GIN (Week 2)
+  add_ports: false            # port numbering -> distinguishes repeated transfers (Multi-GIN)
+  add_ego_ids: false          # ego IDs — needs mini-batch subgraph sampling; deferred to the
+                              # LinkNeighborLoader step (NotImplemented on full-graph for now)
 
 model:
-  arch: gin                   # gin | multi_gin (multi_gin arrives Week 2)
+  arch: gin                   # gin (baseline, GINConv) | multi_gin (GINEConv, edge-aware)
   hidden_dim: 64
   num_layers: 3
   dropout: 0.1
   edge_readout: concat        # combine src||dst||edge_attr -> MLP -> logit
+  # --- multi_gin only ---
+  use_reverse_mp: false       # separate incoming/outgoing message passing (reverse edges)
 
 train:
   epochs: 30
