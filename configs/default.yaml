@@ -61,15 +61,20 @@ model:
   edge_readout: concat        # combine src||dst||edge_attr -> MLP -> logit
   # --- multi_gin only ---
   use_reverse_mp: false       # separate incoming/outgoing message passing (reverse edges)
+  use_ego_ids: false          # mark the seed edge's endpoints — requires train.mode=minibatch
 
 train:
+  mode: full_graph            # full_graph | minibatch (minibatch enables ego IDs + scaling)
   epochs: 30
   lr: 0.001
   weight_decay: 0.0005
-  batch_full_graph: true      # full-graph training (fine for HI-Small); sampling added later
   class_weight: auto          # auto = inverse-frequency weighting for the minority (laundering) class
   early_stop_patience: 8
   monitor: val_pr_auc         # metric used for early stopping / best checkpoint
+  # --- minibatch (LinkNeighborLoader) settings ---
+  batch_size: 4096
+  num_neighbors: [25, 10]     # neighbours sampled per hop (len ~ num_layers)
+  eval_batch_size: 16384
 
 eval:
   # imbalanced data -> accuracy is NOT the headline metric

@@ -6,6 +6,7 @@ Usage:
 """
 from __future__ import annotations
 
+import ast
 import copy
 from typing import Any, Iterable
 
@@ -34,12 +35,18 @@ def _apply_override(cfg: dict, override: str) -> None:
 
 
 def _coerce(raw: str) -> Any:
-    """Turn a CLI string into int/float/bool/None/str where sensible."""
+    """Turn a CLI string into int/float/bool/None/list/str where sensible."""
     low = raw.lower()
     if low in ("true", "false"):
         return low == "true"
     if low in ("none", "null"):
         return None
+    stripped = raw.strip()
+    if stripped.startswith("[") and stripped.endswith("]"):
+        try:
+            return list(ast.literal_eval(stripped))   # e.g. "[25, 10]" -> [25, 10]
+        except (ValueError, SyntaxError):
+            pass
     for cast in (int, float):
         try:
             return cast(raw)

@@ -29,8 +29,18 @@ pip install torch --index-url https://download.pytorch.org/whl/cu121
 # (c) install PyG (matches the torch you just installed):
 pip install torch_geometric
 
-# (d) the rest:
+# (d) install pyg-lib — REQUIRED for minibatch mode (ego IDs / full Multi-GIN).
+#     Use your torch + CUDA versions. torch 2.5.x + CUDA 12.1 example:
+pip install pyg-lib -f https://data.pyg.org/whl/torch-2.5.0+cu121.html
+
+# (e) the rest:
 pip install -r requirements.txt
+```
+
+Verify pyg-lib imports (only needed for the minibatch / ego-ID rung):
+
+```bash
+python -c "import pyg_lib; print('pyg_lib OK')"
 ```
 
 Sanity check the GPU is visible to torch:

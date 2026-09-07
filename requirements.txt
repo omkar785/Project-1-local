@@ -1,9 +1,11 @@
-# Core pipeline deps. Install torch + torch_geometric SEPARATELY to match your CUDA
-# (see SERVER.md) — do NOT rely on the versions a plain `pip install torch` picks,
-# because they must match the server's CUDA/driver.
+# Core pipeline deps. Install torch + torch_geometric + pyg-lib SEPARATELY to match your
+# CUDA/torch (see SERVER.md) — do NOT rely on the versions a plain `pip install torch`
+# picks, because they must match the server's CUDA/driver.
 #
 #   torch
 #   torch_geometric
+#   pyg-lib          # REQUIRED for minibatch mode (LinkNeighborLoader sampling / ego IDs);
+#                    # install from https://data.pyg.org/whl/torch-<ver>+<cuda>.html
 #
 # Everything below is CUDA-independent:
 numpy>=1.24

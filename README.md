@@ -59,12 +59,14 @@ Running on the real data + GPU: see **[SERVER.md](SERVER.md)**.
 
 | Plan item | Status |
 |---|---|
-| Data preprocessing + temporal split + graph | ✅ baseline (real-schema loader, config-driven) |
-| Baseline GIN + metrics + weighted loss | ✅ |
-| Label-efficiency scaffolding (`--label-pct`) | ✅ hooks in place |
-| Experiment logging (seed/label%/metrics/time) | ✅ |
-| **Directed Multi-GIN** (reverse MP, ports, ego ids) | ⏳ Week 2 |
-| **Stage 1 SSL** (LaundroGraph-style) | ⏳ Week 1–2 |
+| Data preprocessing + temporal split + graph | ✅ real-schema loader, config-driven |
+| Baseline GIN + metrics + weighted loss | ✅ verified on real HI-Small |
+| **Directed Multi-GIN**: edge-aware (GINE) + reverse MP + ports | ✅ full-graph, ablatable |
+| **Full Multi-GIN**: + ego IDs (mini-batch LinkNeighborLoader) | ✅ code done, GPU run pending |
+| Week-2 ablation ladder (`scripts/run_ablation.sh`) | ✅ one-command GIN→full Multi-GIN table |
+| Label-efficiency scaffolding (`--label-pct`) | ✅ works in both train modes |
+| Experiment logging (seed/label%/arch/metrics/time) | ✅ |
+| **Stage 1 SSL** (LaundroGraph-style) | ⏳ Person 3 (Week 1–2) |
 | Stage 1 → Stage 2 integration | ⏳ Week 3 |
 | Ablations + explainability prototype | ⏳ Week 4 |
 
