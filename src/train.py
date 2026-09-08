@@ -175,8 +175,22 @@ def _track(val, monitor_key, best_monitor, best_state, best_epoch, patience, mod
     return best_monitor, best_state, best_epoch, patience, patience >= cfg["train"]["early_stop_patience"]
 
 
+def _use_fd_sharing():
+    """Pass sampled subgraphs between DataLoader workers via file descriptors instead of
+    /dev/shm. Containers default /dev/shm to 64MB; with several sampler workers (worse when
+    two GPU lanes run at once) that exhausts and workers die with 'worker exited
+    unexpectedly'. The file_system strategy sidesteps it."""
+    try:
+        import torch.multiprocessing as mp
+
+        mp.set_sharing_strategy("file_system")
+    except Exception:
+        pass
+
+
 def main():
     args = parse_args()
+    _use_fd_sharing()
     cfg = load_config(args.config, args.overrides)
     set_seed(cfg["experiment"]["seed"])
     device = resolve_device(cfg["experiment"]["device"])
