@@ -4,5 +4,6 @@ __pycache__/
 /data/
 /results/checkpoints/
 /results/*.csv
+/results/*.lock
 *.pt
 .DS_Store

@@ -7,7 +7,13 @@ from __future__ import annotations
 
 import csv
 import os
+from contextlib import contextmanager
 from datetime import datetime, timezone
+
+try:
+    import fcntl  # POSIX only
+except ImportError:  # pragma: no cover
+    fcntl = None
 
 FIELDS = [
     "timestamp", "experiment", "arch", "reverse_mp", "ports", "seed", "label_pct", "split",
@@ -17,11 +23,30 @@ FIELDS = [
 ]
 
 
+@contextmanager
+def _lock(path: str):
+    """Cross-process exclusive lock so parallel runs (one per GPU) can log to the same
+    CSV without clobbering each other. Uses a side .lock file; no-op if fcntl is absent."""
+    if fcntl is None:
+        yield
+        return
+    with open(path + ".lock", "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+
+
 def log_result(results_dir: str, row: dict) -> str:
     os.makedirs(results_dir, exist_ok=True)
     path = os.path.join(results_dir, "experiments.csv")
     row = {**row, "timestamp": datetime.now(timezone.utc).isoformat()}
+    with _lock(path):
+        return _write_row(path, row)
 
+
+def _write_row(path: str, row: dict) -> str:
     existing = _read_existing(path)
     if existing is None:
         # New file (or one whose header already matches): simple append.
