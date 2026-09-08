@@ -17,8 +17,13 @@ from torch_geometric.loader import LinkNeighborLoader
 
 
 def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: int,
-                      shuffle: bool):
-    """LinkNeighborLoader over the transactions selected by `seed_indices` (into g's edges)."""
+                      shuffle: bool, num_workers: int = 0):
+    """LinkNeighborLoader over the transactions selected by `seed_indices` (into g's edges).
+
+    Neighbour sampling runs on CPU; with a single-threaded loader the GPU sits idle waiting
+    for it. num_workers>0 parallelizes sampling (persistent workers avoid per-epoch respawn).
+    If the container's /dev/shm is tiny you may hit a 'bus error' — set train.num_workers=0.
+    """
     edge_label_index = g.edge_index[:, seed_indices]
     edge_label = g.y[seed_indices]
     return LinkNeighborLoader(
@@ -30,6 +35,8 @@ def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: 
         shuffle=shuffle,
         disjoint=True,          # one subgraph per target -> clean ego IDs
         neg_sampling_ratio=0.0,  # we have real labels; do not synthesize negatives
+        num_workers=num_workers,
+        persistent_workers=num_workers > 0,
     )
 
 

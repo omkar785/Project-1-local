@@ -128,9 +128,12 @@ def train_minibatch(cfg, g, model, opt, seed_index, edge_attr_dev, pos_weight, m
                     use_ego, device):
     from src.sampling import build_link_loader
     tc = cfg["train"]
-    train_loader = build_link_loader(g, seed_index, tc["num_neighbors"], tc["batch_size"], shuffle=True)
+    workers = tc.get("num_workers", 0)
+    train_loader = build_link_loader(g, seed_index, tc["num_neighbors"], tc["batch_size"],
+                                     shuffle=True, num_workers=workers)
     val_seed = torch.where(g.val_mask)[0]
-    val_loader = build_link_loader(g, val_seed, tc["num_neighbors"], tc["eval_batch_size"], shuffle=False)
+    val_loader = build_link_loader(g, val_seed, tc["num_neighbors"], tc["eval_batch_size"],
+                                   shuffle=False, num_workers=workers)
 
     best_monitor, best_state, best_epoch, patience = -1.0, None, 0, 0
     t0, epochs_run = time.time(), 0
@@ -155,7 +158,8 @@ def predict_minibatch(cfg, g, model, split_mask, edge_attr_dev, use_ego, device)
     from src.sampling import build_link_loader
     seed = torch.where(split_mask)[0]
     loader = build_link_loader(g, seed, cfg["train"]["num_neighbors"],
-                               cfg["train"]["eval_batch_size"], shuffle=False)
+                               cfg["train"]["eval_batch_size"], shuffle=False,
+                               num_workers=cfg["train"].get("num_workers", 0))
     return _run_batches(model, g, loader, seed, edge_attr_dev, use_ego, device)
 
 

@@ -78,6 +78,7 @@ train:
   batch_size: 4096
   num_neighbors: [25, 10]     # neighbours sampled per hop (len ~ num_layers)
   eval_batch_size: 16384
+  num_workers: 4              # parallel CPU neighbour-sampling workers (0 if /dev/shm is tiny)
 
 eval:
   # imbalanced data -> accuracy is NOT the headline metric
