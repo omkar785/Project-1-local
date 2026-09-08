@@ -21,8 +21,11 @@ def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: 
     """LinkNeighborLoader over the transactions selected by `seed_indices` (into g's edges).
 
     Neighbour sampling runs on CPU; with a single-threaded loader the GPU sits idle waiting
-    for it. num_workers>0 parallelizes sampling (persistent workers avoid per-epoch respawn).
-    If the container's /dev/shm is tiny you may hit a 'bus error' — set train.num_workers=0.
+    for it, so num_workers>0 parallelizes it (~7x faster on HI-Small). persistent_workers is
+    deliberately OFF: with it on, PyTorch's DataLoader emits noisy (harmless) "can only test a
+    child process" tracebacks at interpreter shutdown; re-spawning workers each epoch costs ~1s
+    against a ~100s epoch. If the container's /dev/shm is tiny you may hit a 'bus error' —
+    set train.num_workers=0.
     """
     edge_label_index = g.edge_index[:, seed_indices]
     edge_label = g.y[seed_indices]
@@ -36,7 +39,7 @@ def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: 
         disjoint=True,          # one subgraph per target -> clean ego IDs
         neg_sampling_ratio=0.0,  # we have real labels; do not synthesize negatives
         num_workers=num_workers,
-        persistent_workers=num_workers > 0,
+        persistent_workers=False,
     )
 
 
