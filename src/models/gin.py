@@ -39,7 +39,9 @@ class GINEdgeClassifier(nn.Module):
             nn.Linear(hidden, 1),
         )
 
-    def encode(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
+    def encode(self, x: torch.Tensor, edge_index: torch.Tensor, edge_attr=None) -> torch.Tensor:
+        # edge_attr accepted for a uniform encode() signature with Multi-GIN (GINConv does
+        # not use edge features in message passing); it is ignored here.
         h = self.input_proj(x)
         for conv in self.convs:
             h = conv(h, edge_index)

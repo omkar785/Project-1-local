@@ -213,8 +213,8 @@ def main():
         val_probs = get_probs(g.val_mask)
         test_probs = get_probs(g.test_mask)
     else:
-        if cfg["model"]["arch"] != "multi_gin":
-            raise ValueError("minibatch mode is implemented for model.arch=multi_gin.")
+        # minibatch supports both gin (GINConv) and multi_gin (GINE), so the ablation can
+        # hold the training regime constant across architectures.
         edge_attr_dev = g.edge_attr.to(device)
         seed_index = torch.where(train_mask)[0]
         best_epoch, epochs_run, secs = train_minibatch(

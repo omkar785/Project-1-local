@@ -8,7 +8,7 @@ import csv
 import sys
 
 COLS = [
-    ("experiment", 24), ("arch", 10), ("reverse_mp", 10), ("ports", 6),
+    ("experiment", 22), ("arch", 10), ("notes", 16), ("reverse_mp", 10), ("ports", 6),
     ("minority_f1", 11), ("pr_auc", 9), ("precision", 9), ("recall", 8),
     ("roc_auc", 9), ("train_seconds", 8),
 ]
