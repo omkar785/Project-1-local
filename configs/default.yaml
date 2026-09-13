@@ -8,6 +8,8 @@ experiment:
   device: auto                # auto | cpu | cuda | cuda:0 ...
   results_dir: results
   checkpoints_dir: results/checkpoints
+  save_checkpoint: false      # save the best model to checkpoints_dir (turn on for keepers;
+                              # leave off during big sweeps to avoid disk bloat)
 
 data:
   # --- source ---

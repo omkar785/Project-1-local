@@ -12,6 +12,7 @@ Two training modes (train.mode):
 from __future__ import annotations
 
 import argparse
+import os
 import time
 
 import numpy as np
@@ -253,6 +254,15 @@ def main():
                                      "tp", "fp", "fn", "tn", "n_pos", "n")},
     })
     print(f"[logged] {path}")
+
+    if cfg["experiment"].get("save_checkpoint"):
+        from src.checkpoint import save_checkpoint
+
+        ckpt_path = os.path.join(
+            cfg["experiment"]["checkpoints_dir"],
+            f"{cfg['experiment']['name']}_seed{cfg['experiment']['seed']}.pt")
+        save_checkpoint(ckpt_path, model, cfg, node_in, g.edge_attr.size(1), thr, test)
+        print(f"[checkpoint] {ckpt_path}")
 
 
 if __name__ == "__main__":
