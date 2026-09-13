@@ -18,6 +18,7 @@ data:
   # which writes a file with the SAME schema so the pipeline is identical.
   source: synthetic           # synthetic | csv
   csv_path: data/HI-Small_Trans.csv
+  nrows: null                 # csv only: cap to first N transactions (align to a Stage-1 subset)
   patterns_path: data/HI-Small_Patterns.txt   # optional, used later for explainability
   synthetic:
     n_accounts: 2000

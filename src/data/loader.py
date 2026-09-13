@@ -41,7 +41,9 @@ def load(cfg: dict) -> TransactionData:
             seed=cfg["experiment"]["seed"],
         )
     elif dcfg["source"] == "csv":
-        df = pd.read_csv(dcfg["csv_path"])
+        # nrows caps to the first N transactions (AMLworld is time-ordered), so we can align
+        # exactly to the row subset a Stage-1 model was trained on (100% embedding coverage).
+        df = pd.read_csv(dcfg["csv_path"], nrows=dcfg.get("nrows"))
     else:
         raise ValueError(f"Unknown data.source: {dcfg['source']}")
 

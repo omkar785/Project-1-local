@@ -22,6 +22,8 @@ EPOCHS="${MB_EPOCHS:-10}"
 PATIENCE="${MB_PATIENCE:-5}"
 SEEDS="${SEEDS:-42}"
 LABEL_PCTS="${LABEL_PCTS:-1 10 50 100}"
+NROWS="${NROWS:-}"                       # cap to first N transactions (align to Stage-1 subset)
+nrows_args=(); [ -n "$NROWS" ] && nrows_args=(--set data.nrows="$NROWS")
 
 # EMBEDDING set -> Stage-1 PRETRAINED arm (init nodes with Person 3's embeddings);
 # unset -> FROM-SCRATCH arm. Runs are named so report_label_efficiency.py overlays the two.
@@ -44,7 +46,7 @@ for seed in $SEEDS; do
       --set train.mode=minibatch --set train.num_workers="$WORKERS" \
       --set train.epochs="$EPOCHS" --set train.early_stop_patience="$PATIENCE" \
       --set model.arch=multi_gin --set model.use_reverse_mp=true --set graph.add_ports=true \
-      "${arm_args[@]}" \
+      "${arm_args[@]}" "${nrows_args[@]}" \
       --set experiment.name="labeleff_${arm}_p${pct}_s${seed}" \
       --label-pct "$pct"
   done
