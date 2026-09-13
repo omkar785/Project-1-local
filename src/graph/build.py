@@ -43,6 +43,9 @@ def build_graph(data: TransactionData, cfg: dict) -> Data:
     g = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     g.num_nodes = data.n_nodes
     g.timestamps = torch.tensor(data.timestamps, dtype=torch.long)
+    # edge_time enables temporal-safe neighbor sampling: a transaction is only scored from
+    # neighbours that occurred at or before its own timestamp (no future-edge leakage).
+    g.edge_time = g.timestamps
 
     # per-edge split masks (edge classification -> masks live on edges)
     split = torch.tensor(data.split, dtype=torch.long)

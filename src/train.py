@@ -130,11 +130,12 @@ def train_minibatch(cfg, g, model, opt, seed_index, edge_attr_dev, pos_weight, m
     from src.sampling import build_link_loader
     tc = cfg["train"]
     workers = tc.get("num_workers", 0)
+    temporal = bool(tc.get("temporal_sampling"))
     train_loader = build_link_loader(g, seed_index, tc["num_neighbors"], tc["batch_size"],
-                                     shuffle=True, num_workers=workers)
+                                     shuffle=True, num_workers=workers, temporal=temporal)
     val_seed = torch.where(g.val_mask)[0]
     val_loader = build_link_loader(g, val_seed, tc["num_neighbors"], tc["eval_batch_size"],
-                                   shuffle=False, num_workers=workers)
+                                   shuffle=False, num_workers=workers, temporal=temporal)
 
     best_monitor, best_state, best_epoch, patience = -1.0, None, 0, 0
     t0, epochs_run = time.time(), 0
@@ -160,7 +161,8 @@ def predict_minibatch(cfg, g, model, split_mask, edge_attr_dev, use_ego, device)
     seed = torch.where(split_mask)[0]
     loader = build_link_loader(g, seed, cfg["train"]["num_neighbors"],
                                cfg["train"]["eval_batch_size"], shuffle=False,
-                               num_workers=cfg["train"].get("num_workers", 0))
+                               num_workers=cfg["train"].get("num_workers", 0),
+                               temporal=bool(cfg["train"].get("temporal_sampling")))
     return _run_batches(model, g, loader, seed, edge_attr_dev, use_ego, device)
 
 
@@ -243,7 +245,8 @@ def main():
     print(f"[time] {secs:.1f}s for {epochs_run} epochs")
 
     reverse_mp = bool(cfg["model"].get("use_reverse_mp")) if cfg["model"]["arch"] == "multi_gin" else False
-    notes = ";".join(filter(None, [mode, "ego" if use_ego else ""]))
+    notes = ";".join(filter(None, [mode, "ego" if use_ego else "",
+                                   "temporal" if cfg["train"].get("temporal_sampling") else ""]))
     path = log_result(cfg["experiment"]["results_dir"], {
         "experiment": cfg["experiment"]["name"], "arch": cfg["model"]["arch"],
         "reverse_mp": reverse_mp, "ports": bool(cfg["graph"].get("add_ports")),

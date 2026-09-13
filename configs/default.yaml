@@ -81,6 +81,8 @@ train:
   num_neighbors: [25, 10]     # neighbours sampled per hop (len ~ num_layers)
   eval_batch_size: 16384
   num_workers: 4              # parallel CPU neighbour-sampling workers (0 if /dev/shm is tiny)
+  temporal_sampling: false    # true = temporal-safe (only past neighbours; no leakage).
+                              # The rigorous AML eval; numbers drop but become defensible.
 
 eval:
   # imbalanced data -> accuracy is NOT the headline metric

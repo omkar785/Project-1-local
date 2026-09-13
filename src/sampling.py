@@ -17,8 +17,13 @@ from torch_geometric.loader import LinkNeighborLoader
 
 
 def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: int,
-                      shuffle: bool, num_workers: int = 0):
+                      shuffle: bool, num_workers: int = 0, temporal: bool = False):
     """LinkNeighborLoader over the transactions selected by `seed_indices` (into g's edges).
+
+    temporal=True enables temporal-safe sampling: each seed transaction only aggregates
+    neighbours with edge_time <= its own timestamp (no future-edge leakage) — the defensible
+    AML evaluation, since you can't use future transactions to score a current one. Requires
+    g.edge_time.
 
     Neighbour sampling runs on CPU; with a single-threaded loader the GPU sits idle waiting
     for it, so num_workers>0 parallelizes it (~7x faster on HI-Small). persistent_workers is
@@ -29,6 +34,10 @@ def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: 
     """
     edge_label_index = g.edge_index[:, seed_indices]
     edge_label = g.y[seed_indices]
+    kwargs = {}
+    if temporal:
+        kwargs.update(time_attr="edge_time", edge_label_time=g.edge_time[seed_indices],
+                      temporal_strategy="uniform")
     return LinkNeighborLoader(
         g,
         num_neighbors=list(num_neighbors),
@@ -40,6 +49,7 @@ def build_link_loader(g, seed_indices: torch.Tensor, num_neighbors, batch_size: 
         neg_sampling_ratio=0.0,  # we have real labels; do not synthesize negatives
         num_workers=num_workers,
         persistent_workers=False,
+        **kwargs,
     )
 
 
