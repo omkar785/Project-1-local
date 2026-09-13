@@ -23,16 +23,29 @@ PATIENCE="${MB_PATIENCE:-5}"
 SEEDS="${SEEDS:-42}"
 LABEL_PCTS="${LABEL_PCTS:-1 10 50 100}"
 
+# EMBEDDING set -> Stage-1 PRETRAINED arm (init nodes with Person 3's embeddings);
+# unset -> FROM-SCRATCH arm. Runs are named so report_label_efficiency.py overlays the two.
+EMBEDDING="${EMBEDDING:-}"
+if [ -n "$EMBEDDING" ]; then
+  arm_args=(--set graph.node_features=embedding --set graph.embedding.path="$EMBEDDING")
+  arm="pretrained"
+else
+  arm_args=()
+  arm="scratch"
+fi
+echo "### label-efficiency arm: ${arm} ###"
+
 for seed in $SEEDS; do
   for pct in $LABEL_PCTS; do
-    echo "=== label% ${pct}  seed ${seed} ==="
+    echo "=== ${arm}  label% ${pct}  seed ${seed} ==="
     python -m src.train --config configs/default.yaml \
       --set data.source=csv --set data.csv_path="$DATA_CSV" \
       --set experiment.device="$DEVICE" --set experiment.seed="$seed" \
       --set train.mode=minibatch --set train.num_workers="$WORKERS" \
       --set train.epochs="$EPOCHS" --set train.early_stop_patience="$PATIENCE" \
       --set model.arch=multi_gin --set model.use_reverse_mp=true --set graph.add_ports=true \
-      --set experiment.name="labeleff_p${pct}_s${seed}" \
+      "${arm_args[@]}" \
+      --set experiment.name="labeleff_${arm}_p${pct}_s${seed}" \
       --label-pct "$pct"
   done
 done
