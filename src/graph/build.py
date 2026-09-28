@@ -62,6 +62,18 @@ def build_graph(data: TransactionData, cfg: dict) -> Data:
     return g
 
 
+def edge_feature_names(data: TransactionData, cfg: dict) -> list[str]:
+    """Names of the edge-feature columns in edge_attr order (base features, then ports if on).
+
+    Single source of truth for feature attribution / reporting, kept next to where the port
+    columns are actually appended in build_graph so the two never drift.
+    """
+    names = list(data.feature_names)
+    if cfg["graph"].get("add_ports"):
+        names += ["port_out", "port_in", "parallel", "pair_count"]
+    return names
+
+
 def _standardize(feats: np.ndarray, fit_mask: np.ndarray | None) -> np.ndarray:
     """Z-score columns. Fit mean/std on `fit_mask` rows (train) when given, else all rows."""
     fit = feats if fit_mask is None else feats[fit_mask]

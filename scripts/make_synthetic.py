@@ -23,10 +23,14 @@ def main():
     p.add_argument("--n-transactions", type=int, default=40000)
     p.add_argument("--illicit-ratio", type=float, default=0.02)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--no-patterns", action="store_true",
+                   help="omit the _pattern_id/_typology ground-truth columns "
+                        "(exact HI-Small schema; explainability fidelity then can't be scored)")
     args = p.parse_args()
 
     df = generate(n_accounts=args.n_accounts, n_transactions=args.n_transactions,
-                  illicit_ratio=args.illicit_ratio, seed=args.seed)
+                  illicit_ratio=args.illicit_ratio, seed=args.seed,
+                  with_patterns=not args.no_patterns)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     df.to_csv(args.out, index=False)
     print(f"wrote {len(df)} rows -> {args.out}")

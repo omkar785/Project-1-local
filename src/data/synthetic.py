@@ -22,6 +22,7 @@ def generate(
     n_currencies: int = 3,
     n_payment_formats: int = 4,
     seed: int = 42,
+    with_patterns: bool = True,
 ) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     currencies = CURRENCIES[:n_currencies]
@@ -37,15 +38,18 @@ def generate(
     rows = []
     base_ts = pd.Timestamp("2022-09-01 00:00:00")
 
-    # --- licit background traffic ---
+    # --- licit background traffic (no pattern) ---
     for _ in range(n_licit):
         s, r = rng.integers(0, n_accounts, size=2)
         while r == s:
             r = rng.integers(0, n_accounts)
-        rows.append(_row(rng, base_ts, banks, account_ids, s, r, currencies, formats, label=0))
+        rows.append(_row(rng, base_ts, banks, account_ids, s, r, currencies, formats,
+                         label=0, pattern_id=-1, typology=""))
 
     # --- illicit motifs: fan-out and cycle, so structure carries signal ---
-    remaining = n_illicit
+    # Each motif instance gets a unique pattern id + typology, which the explanation-fidelity
+    # metric checks GNNExplainer against (mirrors AMLworld's HI-Small_Patterns.txt grouping).
+    remaining, pid = n_illicit, 0
     while remaining > 0:
         motif = rng.choice(["fan_out", "cycle"])
         if motif == "fan_out":
@@ -55,23 +59,29 @@ def generate(
             for d in dsts:
                 if d == src:
                     continue
-                rows.append(_row(rng, base_ts, banks, account_ids, src, d, currencies, formats, label=1))
+                rows.append(_row(rng, base_ts, banks, account_ids, src, d, currencies, formats,
+                                 label=1, pattern_id=pid, typology="FAN-OUT"))
             remaining -= int(k)
         else:  # cycle
             k = min(rng.integers(3, 6), remaining)
             chain = rng.choice(n_accounts, size=int(k), replace=False)
             for i in range(len(chain)):
                 s, r = chain[i], chain[(i + 1) % len(chain)]
-                rows.append(_row(rng, base_ts, banks, account_ids, s, r, currencies, formats, label=1))
+                rows.append(_row(rng, base_ts, banks, account_ids, s, r, currencies, formats,
+                                 label=1, pattern_id=pid, typology="CYCLE"))
             remaining -= int(k)
+        pid += 1
 
     df = pd.DataFrame(rows)
     # shuffle then sort by time so the temporal split is meaningful
     df = df.sample(frac=1.0, random_state=seed).sort_values("Timestamp").reset_index(drop=True)
+    if not with_patterns:
+        df = df.drop(columns=["_pattern_id", "_typology"])
     return df
 
 
-def _row(rng, base_ts, banks, account_ids, s, r, currencies, formats, label):
+def _row(rng, base_ts, banks, account_ids, s, r, currencies, formats, label,
+         pattern_id=-1, typology=""):
     minutes = int(rng.integers(0, 60 * 24 * 30))  # spread over ~30 days
     ts = (base_ts + pd.Timedelta(minutes=minutes)).strftime("%Y/%m/%d %H:%M")
     # Mild, realistic edge-feature signal so the baseline is learnable on synthetic data:
@@ -95,6 +105,10 @@ def _row(rng, base_ts, banks, account_ids, s, r, currencies, formats, label):
         "Payment Currency": pay_cur,
         "Payment Format": rng.choice(formats),
         "Is Laundering": int(label),
+        # Ground-truth pattern tags (ignored by the loader/model; read only by the
+        # explanation-fidelity metric). Real data carries the equivalent in HI-Small_Patterns.txt.
+        "_pattern_id": int(pattern_id),
+        "_typology": typology,
     }
 
 

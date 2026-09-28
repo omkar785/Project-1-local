@@ -90,3 +90,17 @@ eval:
   primary: [minority_f1, pr_auc]
   secondary: [precision, recall, roc_auc]
   decision_threshold: 0.5
+
+# Layer 6 — explainability (scripts/run_explainability.py, runs on a saved checkpoint).
+# GNNExplainer surfaces the transactions behind an alert; fidelity checks them against the
+# ground-truth laundering pattern (synthetic tags locally; HI-Small_Patterns.txt on the server).
+explain:
+  num_hops: null              # receptive field; null = model.num_layers
+  coverage_threshold: 0.5     # pattern-recall bar for "pattern correctly identified" (Claim 3)
+  max_subgraph_edges: 4000    # cap per-alert subgraph so a hub account can't blow up runtime
+  attribution: occlusion      # occlusion | shap (shap used only if the package is installed)
+  gnn_explainer:
+    epochs: 200
+    lr: 0.01
+    edge_size_coef: 0.008     # sparsity on the SUM of the mask (size-invariant across subgraphs)
+    edge_entropy_coef: 0.1    # push mask values toward crisp 0/1
